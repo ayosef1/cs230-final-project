@@ -1,19 +1,19 @@
 import numpy as np
 
 from preprocess import preprocess
-
-from src.kerasLegacy.kerasTokenizer import Tokenizer
-from src.kerasLegacy.kerasModels import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
-from sklearn.model_selection import train_test_split
-from src.kerasLegacy.kerasCallbacks import ModelCheckpoint
 from sklearn.metrics import accuracy_score
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.callbacks import ModelCheckpoint
+from sklearn.model_selection import train_test_split
 
 print("import successful")
 
-filename = '../data/imdb_dataset.csv'
+raw_data = '../data/imdb_dataset.csv'
+processed_data_file = '../data/imdb_dataset.pkl'
 
-df = preprocess(filename)
+df = preprocess(raw_data, processed_data_file)
 sentiments_encoded = df['sentiment'].map({'positive': 1, 'negative': 0})
 
 def padding_sequences(encoded_reviews, sequence_length):
