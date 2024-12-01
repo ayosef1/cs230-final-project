@@ -4,20 +4,20 @@ import re
 import nltk
 import pickle
 
-from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from nltk import pos_tag
 
 
-#tokenizer src/set of stop words usefdl for cleaning data
+# tokenizer src/set of stop words for cleaning data
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
 nltk.download('omw-1.4')
 
+# --- Helper Functions --- #
 def load_data(filename): #load csv into pandas df
     df = pd.read_csv(filename)
     return df
@@ -38,17 +38,12 @@ def clean_text(text): #remove html tags/special characters
     
     return text
 
-def tokenize(text): #tokenize text into words
-    tokens = word_tokenize(text)
-    return tokens
-
 def remove_stopwords(text):#remove stopword from text tokens
     stop_words = set(stopwords.words('english'))
     words = text.split()
     filtered_words = [word for word in words if word not in stop_words]
     new_text = ' '.join(filtered_words)
     return new_text
-
 
 def get_wordnet_pos(treebank_tag):
     """Converts POS tags to a format recognized by WordNetLemmatizer."""
@@ -62,8 +57,7 @@ def get_wordnet_pos(treebank_tag):
         return wordnet.ADV
     else:
         return wordnet.NOUN
-
-
+    
 def lemmatize_with_pos(text):
     lemmatizer = WordNetLemmatizer()
     words = text.split()
@@ -75,36 +69,28 @@ def lemmatize_with_pos(text):
     lemmatized_text =' '.join(lemmatized_words)
     return lemmatized_text
 
-def preprocess(filename, pickle_file):
-    """Orchestrate the loading and preprocessing of review data."""
-    if os.path.exists(pickle_file):
-        print(f"Loading preprocessed data from {pickle_file}\n")
-        with open(pickle_file, 'rb') as f:
-            df = pickle.load(f)
+class Preprocessor:
+    @staticmethod
+    def preprocess(filename, pickle_file):
+        """Orchestrate the loading and preprocessing of review data."""
+        if os.path.exists(pickle_file):
+            print(f"Loading preprocessed data from {pickle_file}\n")
+            with open(pickle_file, 'rb') as f:
+                df = pickle.load(f)
+            return df
+
+        print(f"Pickle file not found. Preprocessing data from {filename}\n")
+        df = load_data(filename)
+        
+        # Apply cleaning and preprocessing steps to the 'review' column
+        df['cleaned_review'] = df['review'].apply(clean_text).apply(lambda x: x.lower())  # Normalize to lowercase during cleaning
+        df['cleaned_review'] = df['cleaned_review'].apply(remove_stopwords)
+        df['cleaned_review'] = df['cleaned_review'].apply(lemmatize_with_pos)
+
+        # Save the preprocessed data to a pickle file
+        with open(pickle_file, 'wb') as f:
+            pickle.dump(df, f)
+
+        print(f"Preprocessed data saved to {pickle_file}\n")
+        
         return df
-
-    print(f"Pickle file not found. Preprocessing data from {filename}\n")
-    df = load_data(filename)
-    
-    # Apply cleaning and preprocessing steps to the 'review' column
-    df['cleaned_review'] = df['review'].apply(clean_text).apply(lambda x: x.lower())  # Normalize to lowercase during cleaning
-    df['cleaned_review'] = df['cleaned_review'].apply(remove_stopwords)
-    df['tokens'] = df['cleaned_review'].apply(tokenize)
-    df['cleaned_review'] = df['cleaned_review'].apply(lemmatize_with_pos)
-
-    # Save the preprocessed data to a pickle file
-    with open(pickle_file, 'wb') as f:
-        pickle.dump(df, f)
-
-    print(f"Preprocessed data saved to {pickle_file}\n")
-    
-    return df
-    
-if __name__ == "__main__":
-    raw_data = '../data/imdb_dataset.csv'
-    processed_data_file = '../data/imdb_dataset.pkl'
-    
-    processed_data = preprocess(raw_data, processed_data_file)
-    print(processed_data.head())
-    print(processed_data['cleaned_review'].head())
-
