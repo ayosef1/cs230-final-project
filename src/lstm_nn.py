@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from src.preprocessor import Preprocessor
+from preprocessor import Preprocessor
 from sklearn.metrics import accuracy_score
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -13,13 +13,13 @@ class LSTMClassifier:
     def __init__(self,
                  raw_data, 
                  processed_data_file,
-                 checkpoint='lstm_nn_checkpoint.keras',
+                 checkpoint=None,
                  embedding_dim=50, 
                  lstm_units=32, 
                  dropout_rate=0.5,
                  dense_units=32,
                  batch_size=32, 
-                 epochs=5,
+                 epochs=1,
                  learning_rate=0.01,
                  X_test_vect=None,
                  y_test=None):
@@ -37,30 +37,6 @@ class LSTMClassifier:
         self.X_test_vect = X_test_vect
         self.y_test = y_test
 
-    # def __preprocess_for_lstm(self, df):        
-    #     def padding_sequences(encoded_reviews, sequence_length):
-    #         features = np.zeros((len(encoded_reviews), sequence_length), dtype=int)
-    #         for i, review in enumerate(encoded_reviews):
-    #             if len(review) != 0:
-    #                 features[i, -len(review):] = np.array(review)[:sequence_length]
-    #         return features
-
-    #     texts = df['cleaned_review']
-    #     # Create the tokenizer object and fit it to the texts
-    #     tokenizer = Tokenizer()
-    #     tokenizer.fit_on_texts(texts)
-
-    #     # Convert texts to sequences of integers
-    #     sequences = tokenizer.texts_to_sequences(texts)
-
-    #     # Get the vocabulary size for future use
-    #     vocab_size = len(tokenizer.word_index) + 1  # Adding 1 because of reserved 0 index
-
-    #     # Pad sequences to the same length
-    #     max_length = max(len(seq) for seq in sequences)  # Use max length if not provided
-    #     padded_sequences = padding_sequences(sequences, max_length)
-
-    #     return padded_sequences, vocab_size
     def __preprocess_for_lstm(self, df):
         def padding_sequences(encoded_reviews, sequence_length):
             features = np.zeros((len(encoded_reviews), sequence_length), dtype=int)
@@ -109,16 +85,6 @@ class LSTMClassifier:
 
     def train(self):
         df = Preprocessor.preprocess(self.raw_data, self.processed_data_file)
-        # y = df['sentiment'].map({'positive': 1, 'negative': 0})  # This maps text labels to binary
-        
-        # X_train = X_train.drop(columns=['sentiment'])
-
-        # X_train, X_temp, y_train, y_temp = train_test_split(df, y, test_size=0.2, random_state=42)
-        # X_dev, X_test, y_dev, self.y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
-        
-        # X_train_vect, vocab_size_train = self.__preprocess_for_lstm(X_train)
-        # X_dev_vect, _ = self.__preprocess_for_lstm(X_dev)
-        # self.X_test_vect, _ = self.__preprocess_for_lstm(X_test)
 
         # Preprocess data and split into training, dev, and test sets
         X_train_vect, y_train, X_dev_vect, y_dev, self.X_test_vect, self.y_test, vocab_size_train = self.__preprocess_for_lstm(df)
@@ -134,19 +100,24 @@ class LSTMClassifier:
         
         print(self.model.summary())
 
-        checkpoint = ModelCheckpoint(
-            self.checkpoint,
-            monitor='val_accuracy',
-            save_best_only=True,
-            verbose=1
-        )
-
         early_stopping = EarlyStopping(
             monitor='val_accuracy',
             patience=10,
             restore_best_weights=True,
             verbose=1
         )
+
+        if self.checkpoint:
+            checkpoint = ModelCheckpoint(
+                self.checkpoint,
+                monitor='val_accuracy',
+                save_best_only=True,
+                verbose=1
+            )
+            callbacks = [checkpoint, early_stopping]
+        else:
+            callbacks = [early_stopping]
+
 
         print("Beginning Training")
         history = self.model.fit(
@@ -155,13 +126,16 @@ class LSTMClassifier:
             self.batch_size, 
             epochs=self.epochs,
             validation_data=(X_dev_vect, y_dev),
-            callbacks=[checkpoint, early_stopping]
+            callbacks=callbacks
         )
+        
+        if self.checkpoint:
+            plt.plot(history.history['accuracy'], label='Training Accuracy')
+            plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+            plt.legend()
+            plt.show()
 
-        plt.plot(history.history['accuracy'], label='Training Accuracy')
-        plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-        plt.legend()
-        plt.show()
+        return self.model, history
 
     def test(self):
         y_pred = self.model.predict(self.X_test_vect, batch_size=self.batch_size)
