@@ -70,6 +70,11 @@ def lemmatize_with_pos(text):
     return lemmatized_text
 
 class Preprocessor:
+    """
+    This class preprocesses our dataset. It is set up to first check if a pickle
+    file of the preprocessed data already exists. If not, it then preprocesses the
+    dataset indicated by filename
+    """
     @staticmethod
     def preprocess(filename, pickle_file):
         """Orchestrate the loading and preprocessing of review data."""

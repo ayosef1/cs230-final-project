@@ -3,6 +3,10 @@ from lstm_nn import LSTMClassifier
 import pandas as pd
 
 def optimize_hyperparameters(raw_data, processed_data_file, n_trials=20):
+    """
+    We leverage the optuna library to perform our hyperparameter grid search to
+    better tune the LSTM model
+    """
     # Objective function for Optuna
     def objective(trial):
         # Sample hyperparameters

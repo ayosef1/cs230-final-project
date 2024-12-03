@@ -10,6 +10,10 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
 class LSTMClassifier:
+    """
+    This class allows us to finetune an LSTM Model with the user provided
+    parameters.
+    """
     def __init__(self,
                  raw_data, 
                  processed_data_file,
@@ -84,6 +88,10 @@ class LSTMClassifier:
                 vocab_size)
 
     def train(self):
+        """
+        Trains the model on the data. The goal is to 
+        maximize accuracy on the validation set
+        """
         df = Preprocessor.preprocess(self.raw_data, self.processed_data_file)
 
         # Preprocess data and split into training, dev, and test sets
@@ -138,6 +146,9 @@ class LSTMClassifier:
         return self.model, history
 
     def test(self):
+        """
+        Tests the model's performance on the test set
+        """
         y_pred = self.model.predict(self.X_test_vect, batch_size=self.batch_size)
         
         # Convert probabilities to binary labels
