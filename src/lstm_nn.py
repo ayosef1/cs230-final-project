@@ -102,7 +102,7 @@ class LSTMClassifier:
 
         early_stopping = EarlyStopping(
             monitor='val_accuracy',
-            patience=10,
+            patience=5,
             restore_best_weights=True,
             verbose=1
         )

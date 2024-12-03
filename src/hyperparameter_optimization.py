@@ -11,8 +11,8 @@ def optimize_hyperparameters(raw_data, processed_data_file, n_trials=20):
         dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.5, step=0.1)
         dense_units = trial.suggest_int("dense_units", 32, 128, step=32)
         batch_size = trial.suggest_categorical("batch_size", [32, 64, 128])
-        learning_rate = trial.suggest_loguniform("learning_rate", 1e-3, 1e-2)
-
+        learning_rate = trial.suggest_loguniform("learning_rate", 1e-4, 1e-3)
+        
         classifier = LSTMClassifier(
             raw_data=raw_data,
             processed_data_file=processed_data_file,
@@ -21,6 +21,7 @@ def optimize_hyperparameters(raw_data, processed_data_file, n_trials=20):
             dropout_rate=dropout_rate,
             dense_units=dense_units,
             batch_size=batch_size,
+            epochs=10,
             learning_rate=learning_rate,
         )
 
@@ -43,7 +44,7 @@ def main():
     raw_data = 'data/imdb_dataset.csv'
     processed_data_file = 'data/imdb_dataset.pkl'
 
-    optimize_hyperparameters(raw_data, processed_data_file, 1)
+    optimize_hyperparameters(raw_data, processed_data_file, 20)
 
 if __name__ == '__main__':
     main()
